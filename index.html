@@ -1,0 +1,1694 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qwen RAG — Учебная база знаний</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────────────────── */
+:root, [data-theme="light"] {
+  --color-bg:              #f6f5f1;
+  --color-surface:         #faf9f7;
+  --color-surface-2:       #ffffff;
+  --color-surface-offset:  #eeece8;
+  --color-surface-dynamic: #e4e2dc;
+  --color-divider:         #dbd8d2;
+  --color-border:          #d0cdc6;
+
+  --color-text:            #1a1916;
+  --color-text-muted:      #6b6a66;
+  --color-text-faint:      #b0aea8;
+  --color-text-inverse:    #f9f8f5;
+
+  /* Accent — глубокий синий-серый, академичный */
+  --color-primary:         #2b5ea7;
+  --color-primary-hover:   #1e4a8a;
+  --color-primary-active:  #143870;
+  --color-primary-highlight: #dae4f5;
+
+  --color-success:         #2e7d32;
+  --color-success-bg:      #e8f5e9;
+  --color-error:           #b71c1c;
+  --color-error-bg:        #fce4ec;
+  --color-warning:         #e65100;
+  --color-warning-bg:      #fff3e0;
+
+  /* Speed/Quality режимы */
+  --color-speed:           #1565c0;
+  --color-speed-bg:        #e3f2fd;
+  --color-quality:         #6a1b9a;
+  --color-quality-bg:      #f3e5f5;
+  --color-balanced:        #2e7d32;
+  --color-balanced-bg:     #e8f5e9;
+
+  --radius-sm:   0.375rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.06), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.08), 0 2px 4px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.10), 0 4px 8px rgb(0 0 0 / 0.06);
+
+  --text-xs:   clamp(0.75rem,  0.7rem  + 0.25vw, 0.875rem);
+  --text-sm:   clamp(0.875rem, 0.8rem  + 0.35vw, 1rem);
+  --text-base: clamp(1rem,     0.95rem + 0.25vw, 1.125rem);
+  --text-lg:   clamp(1.125rem, 1rem    + 0.5vw,  1.375rem);
+  --text-xl:   clamp(1.375rem, 1.1rem  + 1vw,    1.75rem);
+
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
+
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --transition: 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] {
+  --color-bg:              #131210;
+  --color-surface:         #1a1917;
+  --color-surface-2:       #201f1d;
+  --color-surface-offset:  #17161400;
+  --color-surface-dynamic: #2a2926;
+  --color-divider:         #242320;
+  --color-border:          #323028;
+  --color-text:            #e8e7e3;
+  --color-text-muted:      #7a7875;
+  --color-text-faint:      #4a4846;
+  --color-text-inverse:    #1a1916;
+  --color-primary:         #5b8de8;
+  --color-primary-hover:   #7aa4ef;
+  --color-primary-active:  #96baf5;
+  --color-primary-highlight: #1e2d4a;
+  --color-success:         #66bb6a;
+  --color-success-bg:      #1b3320;
+  --color-error:           #ef5350;
+  --color-error-bg:        #3b1a1a;
+  --color-warning:         #ffa726;
+  --color-warning-bg:      #3b2a10;
+  --color-speed:           #64b5f6;
+  --color-speed-bg:        #1a2a40;
+  --color-quality:         #ce93d8;
+  --color-quality-bg:      #2d1840;
+  --color-balanced:        #81c784;
+  --color-balanced-bg:     #1b3220;
+  --shadow-sm: 0 1px 3px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+/* ── BASE ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  min-height: 100dvh;
+  line-height: 1.6;
+}
+button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; }
+svg { display: block; }
+a, button, input, select, textarea {
+  transition: color var(--transition), background var(--transition),
+              border-color var(--transition), box-shadow var(--transition), opacity var(--transition);
+}
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.app-layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100dvh;
+}
+
+/* ── HEADER ─────────────────────────────────────────────────── */
+.app-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-divider);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+}
+
+.logo-icon {
+  width: 36px; height: 36px;
+  background: var(--color-primary);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.logo-text { font-size: var(--text-lg); font-weight: 700; letter-spacing: -0.02em; color: var(--color-text); }
+.logo-sub { font-size: var(--text-xs); color: var(--color-text-muted); font-weight: 400; }
+
+.header-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-text-faint);
+  flex-shrink: 0;
+}
+.status-dot.ok { background: var(--color-success); box-shadow: 0 0 0 2px var(--color-success-bg); }
+.status-dot.error { background: var(--color-error); }
+.status-dot.loading { background: var(--color-warning); animation: pulse 1.2s ease-in-out infinite; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.meta-chip {
+  display: flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+}
+
+.theme-btn {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.theme-btn:hover { color: var(--color-text); background: var(--color-surface-dynamic); }
+
+/* ── MAIN ───────────────────────────────────────────────────── */
+.app-main {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  padding: var(--space-6);
+  gap: var(--space-6);
+}
+
+/* ── SIDEBAR ────────────────────────────────────────────────── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sidebar-nav {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  width: 100%;
+  text-align: left;
+  position: relative;
+  cursor: pointer;
+}
+.nav-item:hover { color: var(--color-text); background: var(--color-surface-offset); }
+.nav-item.active {
+  color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+.nav-item .nav-icon { flex-shrink: 0; opacity: 0.7; }
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-badge {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.sidebar-stats {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+}
+.stat-label { color: var(--color-text-muted); display: flex; align-items: center; gap: var(--space-2); }
+.stat-value { font-weight: 600; font-family: var(--font-mono); color: var(--color-text); font-size: var(--text-xs); }
+.stat-value.good { color: var(--color-success); }
+.stat-value.chip {
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  font-family: var(--font-mono);
+}
+
+/* ── CONTENT ────────────────────────────────────────────────── */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.tab-panel { display: none; flex-direction: column; gap: var(--space-4); animation: fadeIn 0.2s ease; }
+.tab-panel.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+/* ── CARDS ──────────────────────────────────────────────────── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.card-subtitle { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px; }
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border: 1px solid var(--color-primary);
+}
+.btn-primary:hover { background: var(--color-primary-hover); border-color: var(--color-primary-hover); }
+.btn-primary:active { background: var(--color-primary-active); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--color-surface-offset);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover { background: var(--color-surface-dynamic); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid transparent;
+}
+.btn-ghost:hover { color: var(--color-text); background: var(--color-surface-offset); }
+
+.btn-danger {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border: 1px solid color-mix(in oklch, var(--color-error) 30%, transparent);
+}
+.btn-danger:hover { background: color-mix(in oklch, var(--color-error) 20%, transparent); }
+
+.btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); }
+.btn-lg { padding: var(--space-3) var(--space-6); font-size: var(--text-base); }
+
+.btn-icon {
+  width: 32px; height: 32px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-offset);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-icon:hover { color: var(--color-text); background: var(--color-surface-dynamic); }
+
+/* ── FORM ELEMENTS ──────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.form-label { font-size: var(--text-sm); font-weight: 600; color: var(--color-text); }
+.form-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.input {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-highlight);
+}
+.input::placeholder { color: var(--color-text-faint); }
+
+textarea.input { resize: vertical; min-height: 100px; line-height: 1.6; font-family: var(--font-body); }
+
+/* ── RANGE SLIDER ───────────────────────────────────────────── */
+.range-container { display: flex; flex-direction: column; gap: var(--space-2); }
+.range-header { display: flex; justify-content: space-between; align-items: center; }
+.range-label { font-size: var(--text-sm); font-weight: 600; }
+.range-value {
+  font-size: var(--text-sm); font-weight: 700;
+  font-family: var(--font-mono);
+  padding: 2px var(--space-2);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  min-width: 36px;
+  text-align: center;
+}
+.range-hint { font-size: var(--text-xs); color: var(--color-text-muted); display: flex; justify-content: space-between; }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-dynamic);
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 4px var(--color-primary-highlight);
+}
+
+/* ── OPTIMIZATION MODE ──────────────────────────────────────── */
+.mode-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+.mode-card:hover { border-color: var(--color-primary); background: var(--color-primary-highlight); }
+.mode-card.active {
+  border-color: currentColor;
+}
+.mode-card.speed.active { border-color: var(--color-speed); background: var(--color-speed-bg); color: var(--color-speed); }
+.mode-card.balanced.active { border-color: var(--color-balanced); background: var(--color-balanced-bg); color: var(--color-balanced); }
+.mode-card.quality.active { border-color: var(--color-quality); background: var(--color-quality-bg); color: var(--color-quality); }
+
+.mode-icon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+}
+.mode-card.speed .mode-icon { background: var(--color-speed-bg); }
+.mode-card.balanced .mode-icon { background: var(--color-balanced-bg); }
+.mode-card.quality .mode-icon { background: var(--color-quality-bg); }
+
+.mode-name { font-size: var(--text-sm); font-weight: 700; }
+.mode-desc { font-size: var(--text-xs); color: var(--color-text-muted); line-height: 1.4; }
+.mode-card.active .mode-desc { color: currentColor; opacity: 0.75; }
+
+/* ── UPLOAD ZONE ────────────────────────────────────────────── */
+.upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--color-surface-2);
+  position: relative;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+}
+.upload-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-offset);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto var(--space-4);
+  color: var(--color-text-muted);
+}
+.upload-title { font-weight: 600; margin-bottom: var(--space-1); }
+.upload-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+.upload-formats {
+  display: flex; gap: var(--space-2); justify-content: center; margin-top: var(--space-3);
+}
+.fmt-badge {
+  font-size: var(--text-xs); font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-offset);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+/* ── FILE LIST ──────────────────────────────────────────────── */
+.file-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.file-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+.file-item-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.file-item-ext {
+  font-size: var(--text-xs); font-weight: 700;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.file-item-remove { color: var(--color-text-faint); cursor: pointer; flex-shrink: 0; }
+.file-item-remove:hover { color: var(--color-error); }
+
+/* ── DOCUMENT LIST ──────────────────────────────────────────── */
+.doc-grid { display: flex; flex-direction: column; gap: var(--space-2); }
+.doc-item {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+}
+.doc-check { flex-shrink: 0; cursor: pointer; accent-color: var(--color-primary); width: 16px; height: 16px; }
+.doc-name { flex: 1; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-chunks {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+/* ── Q&A ────────────────────────────────────────────────────── */
+.answer-card {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  animation: fadeIn 0.25s ease;
+}
+.answer-header {
+  display: flex; align-items: center; gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+.answer-badge {
+  font-size: var(--text-xs); font-weight: 600;
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-highlight);
+  color: var(--color-primary);
+}
+.answer-body { line-height: 1.8; color: var(--color-text); white-space: pre-wrap; }
+.sources-section { margin-top: var(--space-5); }
+.sources-title {
+  font-size: var(--text-xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+  display: flex; align-items: center; gap: var(--space-2);
+}
+.source-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  margin: 2px;
+}
+.source-chip strong { color: var(--color-primary); }
+
+/* ── QUIZ ───────────────────────────────────────────────────── */
+.quiz-grid { display: grid; grid-template-columns: 1fr 320px; gap: var(--space-4); }
+
+.checkbox-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+.check-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm); font-weight: 500;
+  transition: all var(--transition);
+  background: var(--color-surface-2);
+}
+.check-item:hover { border-color: var(--color-primary); background: var(--color-primary-highlight); }
+.check-item.checked { border-color: var(--color-primary); background: var(--color-primary-highlight); color: var(--color-primary); }
+.check-item input { display: none; }
+.check-item .check-dot {
+  width: 16px; height: 16px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition);
+}
+.check-item.checked .check-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.source-list-quiz { display: flex; flex-direction: column; gap: var(--space-2); max-height: 300px; overflow-y: auto; }
+.quiz-question {
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  animation: fadeIn 0.2s ease;
+}
+.quiz-q-header {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.quiz-q-num {
+  width: 28px; height: 28px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs); font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.quiz-q-type {
+  font-size: var(--text-xs); font-weight: 600;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.type-open { background: var(--color-speed-bg); color: var(--color-speed); }
+.type-mcq { background: var(--color-quality-bg); color: var(--color-quality); }
+.type-truefalse { background: var(--color-balanced-bg); color: var(--color-balanced); }
+
+.quiz-q-text { font-weight: 600; line-height: 1.5; flex: 1; }
+.mcq-options { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
+.mcq-option {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  background: var(--color-surface-offset);
+  border: 1px solid var(--color-border);
+}
+.mcq-option.correct { background: var(--color-success-bg); border-color: var(--color-success); }
+.mcq-key { font-weight: 700; font-family: var(--font-mono); color: var(--color-text-muted); width: 20px; flex-shrink: 0; }
+.mcq-option.correct .mcq-key { color: var(--color-success); }
+.answer-reveal {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-success-bg);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  border: 1px solid color-mix(in oklch, var(--color-success) 30%, transparent);
+}
+.answer-reveal strong { color: var(--color-success); }
+
+/* ── TOAST / ALERT ──────────────────────────────────────────── */
+.toast-area {
+  position: fixed; top: var(--space-6); right: var(--space-6);
+  z-index: 9999; display: flex; flex-direction: column; gap: var(--space-2);
+  max-width: 380px;
+}
+.toast {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  animation: slideIn 0.2s ease;
+}
+.toast.error { border-left: 3px solid var(--color-error); }
+.toast.success { border-left: 3px solid var(--color-success); }
+.toast.info { border-left: 3px solid var(--color-primary); }
+@keyframes slideIn { from { opacity:0; transform: translateX(20px); } to { opacity:1; transform: none; } }
+@keyframes slideOut { to { opacity:0; transform: translateX(20px); } }
+
+/* ── EMPTY STATE ────────────────────────────────────────────── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--color-text-muted);
+  gap: var(--space-3);
+}
+.empty-icon { color: var(--color-text-faint); margin-bottom: var(--space-2); }
+.empty-title { font-size: var(--text-base); font-weight: 600; color: var(--color-text); }
+.empty-text { font-size: var(--text-sm); max-width: 32ch; }
+
+/* ── SKELETON ───────────────────────────────────────────────── */
+@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+.skeleton {
+  background: linear-gradient(90deg,
+    var(--color-surface-offset) 25%,
+    var(--color-surface-dynamic) 50%,
+    var(--color-surface-offset) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+/* ── LOADING SPINNER ────────────────────────────────────────── */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2.5px solid var(--color-surface-dynamic);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── PROGRESS BAR ───────────────────────────────────────────── */
+.progress-bar {
+  width: 100%; height: 4px;
+  background: var(--color-surface-offset);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+/* ── DIVIDER ────────────────────────────────────────────────── */
+.divider { height: 1px; background: var(--color-divider); }
+.divider-label {
+  display: flex; align-items: center; gap: var(--space-3);
+  font-size: var(--text-xs); color: var(--color-text-faint); margin: var(--space-2) 0;
+}
+.divider-label::before, .divider-label::after { content: ''; flex: 1; height: 1px; background: var(--color-divider); }
+
+/* ── TOGGLE SWITCH ──────────────────────────────────────────── */
+.toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+.toggle-label { display: flex; flex-direction: column; gap: 2px; }
+.toggle-name { font-size: var(--text-sm); font-weight: 600; }
+.toggle-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+.toggle {
+  position: relative; width: 40px; height: 22px;
+  cursor: pointer;
+}
+.toggle input { display: none; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--color-surface-dynamic);
+  border-radius: var(--radius-full);
+  transition: background var(--transition);
+}
+.toggle input:checked ~ .toggle-track { background: var(--color-primary); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  transition: transform var(--transition);
+}
+.toggle input:checked ~ .toggle-thumb { transform: translateX(18px); }
+
+/* ── QUIZ RESULTS HEADER ────────────────────────────────────── */
+.results-header {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+.results-stat { text-align: center; flex: 1; }
+.results-stat-val { font-size: var(--text-xl); font-weight: 800; color: var(--color-primary); font-family: var(--font-mono); }
+.results-stat-label { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .app-main { grid-template-columns: 1fr; padding: var(--space-4); }
+  .sidebar { flex-direction: row; flex-wrap: wrap; }
+  .sidebar-nav { flex: 1; }
+  .quiz-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .header-meta { display: none; }
+  .mode-selector { grid-template-columns: 1fr; }
+  .checkbox-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+
+<!-- TOASTS -->
+<div class="toast-area" id="toast-area"></div>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-logo">
+    <div class="logo-icon" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Qwen RAG</div>
+      <div class="logo-sub">Учебная база знаний</div>
+    </div>
+  </div>
+
+  <div class="header-meta">
+    <div class="meta-chip">
+      <i data-lucide="cpu" style="width:12px;height:12px"></i>
+      <span id="hdr-device">—</span>
+    </div>
+    <div class="meta-chip">
+      <i data-lucide="database" style="width:12px;height:12px"></i>
+      <span id="hdr-index">—</span>
+    </div>
+  </div>
+
+  <div class="header-status" id="header-status">
+    <div class="status-dot loading" id="status-dot"></div>
+    <span id="status-text">Подключение...</span>
+  </div>
+
+  <button class="theme-btn" data-theme-toggle aria-label="Переключить тему">
+    <i data-lucide="moon" style="width:16px;height:16px"></i>
+  </button>
+</header>
+
+<!-- MAIN -->
+<main class="app-main">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <nav class="sidebar-nav" role="navigation" aria-label="Разделы">
+      <button class="nav-item active" onclick="switchTab('docs')" id="nav-docs">
+        <i data-lucide="folder-open" class="nav-icon" style="width:18px;height:18px"></i>
+        Документы
+        <span class="nav-badge" id="nav-docs-count">0</span>
+      </button>
+      <button class="nav-item" onclick="switchTab('ask')" id="nav-ask">
+        <i data-lucide="message-circle" class="nav-icon" style="width:18px;height:18px"></i>
+        Вопрос–ответ
+      </button>
+      <button class="nav-item" onclick="switchTab('quiz')" id="nav-quiz">
+        <i data-lucide="clipboard-list" class="nav-icon" style="width:18px;height:18px"></i>
+        Генерация теста
+      </button>
+    </nav>
+
+    <div class="sidebar-stats">
+      <div class="stat-row">
+        <span class="stat-label"><i data-lucide="layers" style="width:12px;height:12px"></i> Документов</span>
+        <span class="stat-value" id="stat-docs">—</span>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-row">
+        <span class="stat-label"><i data-lucide="cpu" style="width:12px;height:12px"></i> Устройство</span>
+        <span class="stat-value chip" id="stat-device">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label"><i data-lucide="database" style="width:12px;height:12px"></i> Индекс</span>
+        <span class="stat-value good" id="stat-index">—</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- ── TAB: DOCS ───────────────────────────────────────── -->
+    <section class="tab-panel active" id="tab-docs" aria-label="Документы">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4)">
+
+        <!-- Upload -->
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="upload-cloud" style="width:20px;height:20px;color:var(--color-primary)"></i>
+            <div>
+              <div class="card-title">Загрузка материалов</div>
+              <div class="card-subtitle">PDF, DOCX, TXT — до 50 МБ за файл</div>
+            </div>
+          </div>
+
+          <div class="upload-zone" id="upload-zone"
+               ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+            <input type="file" id="file-input" multiple accept=".pdf,.docx,.txt" onchange="handleFileSelect(event)">
+            <div class="upload-icon">
+              <i data-lucide="file-plus" style="width:24px;height:24px"></i>
+            </div>
+            <div class="upload-title">Перетащите файлы сюда</div>
+            <div class="upload-hint">или нажмите для выбора</div>
+            <div class="upload-formats">
+              <span class="fmt-badge">PDF</span>
+              <span class="fmt-badge">DOCX</span>
+              <span class="fmt-badge">TXT</span>
+            </div>
+          </div>
+
+          <div class="file-list" id="file-list" style="margin-top:var(--space-3)"></div>
+
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-4)">
+            <button class="btn btn-primary" id="upload-btn" onclick="uploadFiles()" disabled>
+              <i data-lucide="upload" style="width:16px;height:16px"></i>
+              Загрузить
+            </button>
+            <button class="btn btn-secondary" onclick="clearFiles()">
+              <i data-lucide="x" style="width:16px;height:16px"></i>
+              Очистить
+            </button>
+          </div>
+
+          <div id="upload-progress" style="display:none;margin-top:var(--space-3)">
+            <div class="progress-bar"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:var(--space-1)" id="progress-text">Загрузка...</div>
+          </div>
+        </div>
+
+        <!-- Document list -->
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="library" style="width:20px;height:20px;color:var(--color-primary)"></i>
+            <div>
+              <div class="card-title">База знаний</div>
+              <div class="card-subtitle">Загруженные материалы</div>
+            </div>
+            <button class="btn-icon" onclick="loadDocuments()" aria-label="Обновить список" style="margin-left:auto">
+              <i data-lucide="refresh-cw" style="width:14px;height:14px"></i>
+            </button>
+          </div>
+
+          <div class="doc-grid" id="doc-list">
+            <div class="empty-state">
+              <i data-lucide="inbox" class="empty-icon" style="width:40px;height:40px"></i>
+              <div class="empty-title">База пуста</div>
+              <div class="empty-text">Загрузите учебные материалы, чтобы начать работу</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TAB: Q&A ──────────────────────────────────────────── -->
+    <section class="tab-panel" id="tab-ask" aria-label="Вопрос–ответ">
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:var(--space-4)">
+
+        <!-- Ask panel -->
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="search" style="width:20px;height:20px;color:var(--color-primary)"></i>
+            <div>
+              <div class="card-title">Задать вопрос</div>
+              <div class="card-subtitle">Ответ формируется на основе загруженных материалов</div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:var(--space-4)">
+            <label class="form-label" for="question-input">Ваш вопрос</label>
+            <textarea id="question-input" class="input" rows="4"
+              placeholder="Например: Что такое векторная база данных и как она применяется в RAG-системах?"></textarea>
+          </div>
+
+          <button class="btn btn-primary btn-lg" id="ask-btn" onclick="askQuestion()" style="width:100%">
+            <i data-lucide="send" style="width:18px;height:18px"></i>
+            Получить ответ
+          </button>
+
+          <div id="answer-container" style="margin-top:var(--space-4)"></div>
+        </div>
+
+        <!-- Settings panel for Q&A -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+
+          <!-- Optimization mode -->
+          <div class="card">
+            <div class="card-header">
+              <i data-lucide="sliders" style="width:18px;height:18px;color:var(--color-primary)"></i>
+              <div class="card-title" style="font-size:var(--text-base)">Режим работы</div>
+            </div>
+
+            <div class="mode-selector" id="mode-selector">
+              <div class="mode-card speed active" data-mode="speed" onclick="selectMode('speed')">
+                <div class="mode-icon">⚡</div>
+                <div class="mode-name">Скорость</div>
+                <div class="mode-desc">Быстрый ответ, меньше контекста</div>
+              </div>
+              <div class="mode-card balanced" data-mode="balanced" onclick="selectMode('balanced')">
+                <div class="mode-icon">⚖️</div>
+                <div class="mode-name">Баланс</div>
+                <div class="mode-desc">Оптимально для большинства задач</div>
+              </div>
+              <div class="mode-card quality" data-mode="quality" onclick="selectMode('quality')">
+                <div class="mode-icon">🎯</div>
+                <div class="mode-name">Качество</div>
+                <div class="mode-desc">Детальный ответ, больше источников</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Advanced settings -->
+          <div class="card">
+            <div class="card-header">
+              <i data-lucide="settings-2" style="width:18px;height:18px;color:var(--color-primary)"></i>
+              <div class="card-title" style="font-size:var(--text-base)">Параметры</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+              <div class="range-container">
+                <div class="range-header">
+                  <span class="range-label">Источников</span>
+                  <span class="range-value" id="k-value">3</span>
+                </div>
+                <input type="range" id="k-slider" min="1" max="10" value="3"
+                  oninput="document.getElementById('k-value').textContent=this.value">
+                <div class="range-hint"><span>1</span><span>10</span></div>
+              </div>
+
+              <div class="range-container">
+                <div class="range-header">
+                  <span class="range-label">Температура</span>
+                  <span class="range-value" id="temp-value">0.3</span>
+                </div>
+                <input type="range" id="temp-slider" min="0" max="2" step="0.1" value="0.3"
+                  oninput="document.getElementById('temp-value').textContent=parseFloat(this.value).toFixed(1)">
+                <div class="range-hint"><span>Точно</span><span>Творчески</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TAB: QUIZ ─────────────────────────────────────────── -->
+    <section class="tab-panel" id="tab-quiz" aria-label="Генерация теста">
+      <div class="quiz-grid">
+
+        <!-- Settings -->
+        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+          <div class="card">
+            <div class="card-header">
+              <i data-lucide="settings" style="width:20px;height:20px;color:var(--color-primary)"></i>
+              <div>
+                <div class="card-title">Параметры теста</div>
+                <div class="card-subtitle">Настройте генерацию под свои задачи</div>
+              </div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+
+              <div class="range-container">
+                <div class="range-header">
+                  <span class="range-label">Количество вопросов</span>
+                  <span class="range-value" id="q-count-val">10</span>
+                </div>
+                <input type="range" id="q-count" min="1" max="30" value="10"
+                  oninput="document.getElementById('q-count-val').textContent=this.value">
+                <div class="range-hint"><span>1</span><span>30</span></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Типы вопросов</label>
+                <div class="checkbox-grid">
+                  <label class="check-item" id="chk-open" onclick="toggleCheck('open')">
+                    <div class="check-dot" id="dot-open"><i data-lucide="check" style="width:10px;height:10px"></i></div>
+                    <span>Открытые</span>
+                  </label>
+                  <label class="check-item checked" id="chk-mcq" onclick="toggleCheck('mcq')">
+                    <div class="check-dot" id="dot-mcq"><i data-lucide="check" style="width:10px;height:10px"></i></div>
+                    <span>С выбором (MCQ)</span>
+                  </label>
+                  <label class="check-item checked" id="chk-tf" onclick="toggleCheck('truefalse')">
+                    <div class="check-dot" id="dot-truefalse"><i data-lucide="check" style="width:10px;height:10px"></i></div>
+                    <span>Правда / Ложь</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="toggle-row">
+                <div class="toggle-label">
+                  <span class="toggle-name">Эталонные ответы</span>
+                  <span class="toggle-hint">Генерировать правильные ответы к вопросам</span>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="gen-answers" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+
+              <div class="range-container">
+                <div class="range-header">
+                  <span class="range-label">Температура генерации</span>
+                  <span class="range-value" id="quiz-temp-val">0.7</span>
+                </div>
+                <input type="range" id="quiz-temp" min="0" max="2" step="0.1" value="0.7"
+                  oninput="document.getElementById('quiz-temp-val').textContent=parseFloat(this.value).toFixed(1)">
+                <div class="range-hint"><span>Точно</span><span>Разнообразно</span></div>
+              </div>
+
+              <div class="range-container">
+                <div class="range-header">
+                  <span class="range-label">Чанков на вопрос</span>
+                  <span class="range-value" id="quiz-chunks-val">2</span>
+                </div>
+                <input type="range" id="quiz-chunks" min="1" max="5" value="2"
+                  oninput="document.getElementById('quiz-chunks-val').textContent=this.value">
+                <div class="range-hint"><span>1</span><span>5</span></div>
+              </div>
+
+            </div>
+
+            <div style="margin-top:var(--space-5)">
+              <button class="btn btn-primary btn-lg" id="gen-btn" onclick="generateQuiz()" style="width:100%">
+                <i data-lucide="sparkles" style="width:18px;height:18px"></i>
+                Сгенерировать тест
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sources -->
+        <div class="card">
+          <div class="card-header">
+            <i data-lucide="folder" style="width:18px;height:18px;color:var(--color-primary)"></i>
+            <div>
+              <div class="card-title" style="font-size:var(--text-base)">Источники</div>
+              <div class="card-subtitle">Выберите документы или оставьте все</div>
+            </div>
+          </div>
+
+          <div class="source-list-quiz" id="quiz-sources">
+            <div class="empty-state" style="padding:var(--space-8) 0">
+              <i data-lucide="loader" class="empty-icon" style="width:24px;height:24px"></i>
+              <div class="empty-text">Загрузка...</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-4)">
+            <button class="btn btn-secondary btn-sm" onclick="selectAllSources(true)">Все</button>
+            <button class="btn btn-secondary btn-sm" onclick="selectAllSources(false)">Снять</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quiz results -->
+      <div id="quiz-results"></div>
+    </section>
+
+  </div><!-- /content-area -->
+</main>
+</div><!-- /app-layout -->
+
+<script>
+const API = window.location.origin;
+
+// ── STATE ────────────────────────────────────────────────────
+let selectedFiles = [];
+let currentMode = 'speed';
+let activeTypes = new Set(['mcq', 'truefalse']);
+const modePresets = {
+  speed:    { k: 2,  temp: 0.2, chunks: 1 },
+  balanced: { k: 4,  temp: 0.5, chunks: 2 },
+  quality:  { k: 8,  temp: 0.7, chunks: 3 }
+};
+
+// ── THEME ────────────────────────────────────────────────────
+(function(){
+  const root = document.documentElement;
+  const btn = document.querySelector('[data-theme-toggle]');
+  let theme = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  root.setAttribute('data-theme', theme);
+  function updateIcon(t) {
+    btn.innerHTML = t === 'dark'
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  }
+  updateIcon(theme);
+  btn.addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', theme);
+    updateIcon(theme);
+  });
+})();
+
+// ── ICONS ────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  lucide.createIcons();
+  loadStatus();
+  loadDocuments();
+  loadQuizSources();
+  setInterval(loadStatus, 30000);
+});
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, type = 'info', duration = 4000) {
+  const area = document.getElementById('toast-area');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  const icons = { info: 'info', success: 'check-circle', error: 'alert-circle' };
+  el.innerHTML = `<i data-lucide="${icons[type]||'info'}" style="width:18px;height:18px;flex-shrink:0;color:var(--color-${type==='info'?'primary':type})"></i><span>${msg}</span>`;
+  area.appendChild(el);
+  lucide.createIcons({ nodes: [el] });
+  setTimeout(() => {
+    el.style.animation = 'slideOut 0.2s ease forwards';
+    setTimeout(() => el.remove(), 200);
+  }, duration);
+}
+
+// ── STATUS ───────────────────────────────────────────────────
+async function loadStatus() {
+  try {
+    const r = await fetch(`${API}/status`);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    dot.className = 'status-dot ok';
+    txt.textContent = 'Готова';
+
+    const device = d.device || d.cuda_device || '—';
+    const index = d.vectorstore_type || d.index || '—';
+    const docs = d.documents_count ?? d.total_documents ?? '—';
+
+    document.getElementById('hdr-device').textContent = device;
+    document.getElementById('hdr-index').textContent = index + (d.vectorstore_ready ? ' ✓' : '');
+    document.getElementById('stat-docs').textContent = docs;
+    document.getElementById('stat-device').textContent = device;
+    document.getElementById('stat-index').textContent = index;
+    document.getElementById('nav-docs-count').textContent = docs;
+  } catch {
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    dot.className = 'status-dot error';
+    txt.textContent = 'Недоступна';
+  }
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['docs', 'ask', 'quiz'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+  });
+  if (tab === 'quiz') loadQuizSources();
+}
+
+// ── MODE SELECTOR ────────────────────────────────────────────
+function selectMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => {
+    c.classList.toggle('active', c.dataset.mode === mode);
+  });
+  const p = modePresets[mode];
+  document.getElementById('k-slider').value = p.k;
+  document.getElementById('k-value').textContent = p.k;
+  document.getElementById('temp-slider').value = p.temp;
+  document.getElementById('temp-value').textContent = p.temp.toFixed(1);
+}
+
+// ── CHECKBOX TYPES ───────────────────────────────────────────
+function toggleCheck(type) {
+  if (activeTypes.has(type)) {
+    if (activeTypes.size <= 1) { toast('Выберите хотя бы один тип', 'error'); return; }
+    activeTypes.delete(type);
+  } else {
+    activeTypes.add(type);
+  }
+  document.getElementById(`chk-${type === 'truefalse' ? 'tf' : type}`).classList.toggle('checked', activeTypes.has(type));
+}
+
+// ── FILE UPLOAD ──────────────────────────────────────────────
+function handleDragOver(e) { e.preventDefault(); document.getElementById('upload-zone').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('upload-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  handleDragLeave();
+  addFiles(Array.from(e.dataTransfer.files));
+}
+function handleFileSelect(e) { addFiles(Array.from(e.target.files)); }
+
+function addFiles(files) {
+  const allowed = ['.pdf','.docx','.txt'];
+  files.forEach(f => {
+    const ext = '.' + f.name.split('.').pop().toLowerCase();
+    if (!allowed.includes(ext)) { toast(`${f.name} — неподдерживаемый формат`, 'error'); return; }
+    if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f);
+  });
+  renderFileList();
+}
+
+function removeFile(name) { selectedFiles = selectedFiles.filter(f => f.name !== name); renderFileList(); }
+function clearFiles() { selectedFiles = []; document.getElementById('file-input').value = ''; renderFileList(); }
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  const btn = document.getElementById('upload-btn');
+  btn.disabled = selectedFiles.length === 0;
+  if (!selectedFiles.length) { list.innerHTML = ''; return; }
+  list.innerHTML = selectedFiles.map(f => {
+    const ext = f.name.split('.').pop().toUpperCase();
+    return `<div class="file-item">
+      <span class="file-item-ext">${ext}</span>
+      <span class="file-item-name">${f.name}</span>
+      <span class="file-item-remove" onclick="removeFile('${f.name}')" aria-label="Удалить">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </span>
+    </div>`;
+  }).join('');
+}
+
+async function uploadFiles() {
+  if (!selectedFiles.length) return;
+  const btn = document.getElementById('upload-btn');
+  const progress = document.getElementById('upload-progress');
+  const fill = document.getElementById('progress-fill');
+  const txt = document.getElementById('progress-text');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Загрузка...';
+  progress.style.display = 'block';
+
+  let done = 0;
+  for (const file of selectedFiles) {
+    txt.textContent = `Загрузка: ${file.name}`;
+    const fd = new FormData();
+    fd.append('files', file);
+    try {
+      const r = await fetch(`${API}/upload`, { method: 'POST', body: fd });
+      if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Ошибка'); }
+      done++;
+      fill.style.width = `${(done / selectedFiles.length) * 100}%`;
+    } catch(e) { toast(`Ошибка: ${file.name} — ${e.message}`, 'error'); }
+  }
+
+  progress.style.display = 'none';
+  fill.style.width = '0%';
+  btn.innerHTML = '<i data-lucide="upload" style="width:16px;height:16px"></i> Загрузить';
+  lucide.createIcons({ nodes: [btn] });
+  if (done > 0) { toast(`Загружено файлов: ${done}`, 'success'); clearFiles(); loadDocuments(); loadStatus(); loadQuizSources(); }
+  btn.disabled = false;
+}
+
+// ── DOCUMENTS ────────────────────────────────────────────────
+async function loadDocuments() {
+  try {
+    const r = await fetch(`${API}/documents`);
+    const d = await r.json();
+    const list = document.getElementById('doc-list');
+    const docs = d.documents || d.files || [];
+    if (!docs.length) {
+      list.innerHTML = `<div class="empty-state">
+        <i data-lucide="inbox" class="empty-icon" style="width:40px;height:40px"></i>
+        <div class="empty-title">База пуста</div>
+        <div class="empty-text">Загрузите учебные материалы, чтобы начать работу</div>
+      </div>`;
+    } else {
+      list.innerHTML = docs.map(doc => {
+        const name = typeof doc === 'string' ? doc : (doc.name || doc.filename || doc.title || JSON.stringify(doc));
+        const chunks = doc.chunks || doc.chunk_count || '';
+        return `<div class="doc-item">
+          <i data-lucide="file-text" style="width:16px;height:16px;color:var(--color-text-muted);flex-shrink:0"></i>
+          <span class="doc-name">${name}</span>
+          ${chunks ? `<span class="doc-chunks">${chunks} чанков</span>` : ''}
+        </div>`;
+      }).join('');
+    }
+    lucide.createIcons({ nodes: [list] });
+  } catch(e) { console.error(e); }
+}
+
+// ── Q&A ──────────────────────────────────────────────────────
+async function askQuestion() {
+  const q = document.getElementById('question-input').value.trim();
+  if (!q) { toast('Введите вопрос', 'error'); return; }
+  const btn = document.getElementById('ask-btn');
+  const container = document.getElementById('answer-container');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Генерация...';
+  container.innerHTML = `<div class="answer-card">
+    <div style="display:flex;gap:var(--space-4);align-items:center">
+      <div class="spinner"></div>
+      <span style="color:var(--color-text-muted);font-size:var(--text-sm)">Модель анализирует материалы...</span>
+    </div>
+    <div style="margin-top:var(--space-4)">
+      <div class="skeleton" style="height:14px;margin-bottom:8px"></div>
+      <div class="skeleton" style="height:14px;margin-bottom:8px;width:85%"></div>
+      <div class="skeleton" style="height:14px;width:70%"></div>
+    </div>
+  </div>`;
+
+  try {
+    const body = {
+      question: q,
+      k: parseInt(document.getElementById('k-slider').value),
+      temperature: parseFloat(document.getElementById('temp-slider').value)
+    };
+    const r = await fetch(`${API}/ask`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Ошибка сервера'); }
+    const d = await r.json();
+    const answer = d.answer || d.response || d.result || '—';
+    const sources = d.sources || d.documents || [];
+
+    container.innerHTML = `<div class="answer-card">
+      <div class="answer-header">
+        <i data-lucide="bot" style="width:18px;height:18px;color:var(--color-primary)"></i>
+        <span style="font-weight:600;font-size:var(--text-sm)">Ответ модели</span>
+        <span class="answer-badge">${currentMode === 'speed' ? '⚡ Скорость' : currentMode === 'balanced' ? '⚖️ Баланс' : '🎯 Качество'}</span>
+      </div>
+      <div class="answer-body">${answer}</div>
+      ${sources.length ? `
+      <div class="sources-section">
+        <div class="sources-title"><i data-lucide="link" style="width:12px;height:12px"></i> Источники (${sources.length})</div>
+        <div>${sources.map(s => {
+          const name = typeof s === 'string' ? s : (s.source || s.file || s.document || JSON.stringify(s));
+          const score = s.score ? (s.score * 100).toFixed(0) + '%' : '';
+          return `<span class="source-chip"><i data-lucide="file-text" style="width:12px;height:12px"></i><strong>${name}</strong>${score ? ` <span style="color:var(--color-text-muted)">${score}</span>` : ''}</span>`;
+        }).join('')}</div>
+      </div>` : ''}
+    </div>`;
+    lucide.createIcons({ nodes: [container] });
+  } catch(e) {
+    container.innerHTML = `<div class="answer-card">
+      <div style="display:flex;gap:var(--space-3);align-items:center;color:var(--color-error)">
+        <i data-lucide="alert-circle" style="width:20px;height:20px;flex-shrink:0"></i>
+        <span>${e.message}</span>
+      </div>
+    </div>`;
+    lucide.createIcons({ nodes: [container] });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="send" style="width:18px;height:18px"></i> Получить ответ';
+    lucide.createIcons({ nodes: [btn] });
+  }
+}
+
+// ── QUIZ SOURCES ─────────────────────────────────────────────
+async function loadQuizSources() {
+  const el = document.getElementById('quiz-sources');
+  try {
+    const r = await fetch(`${API}/quiz/sources`);
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    const sources = d.sources || d.documents || d.files || [];
+    if (!sources.length) {
+      el.innerHTML = `<div class="empty-state" style="padding:var(--space-6) 0">
+        <i data-lucide="inbox" class="empty-icon" style="width:28px;height:28px"></i>
+        <div class="empty-text">Нет загруженных документов</div>
+      </div>`;
+    } else {
+      el.innerHTML = sources.map(s => `<div class="doc-item">
+        <input type="checkbox" class="doc-check quiz-source-check" value="${s}" checked>
+        <span class="doc-name">${s}</span>
+      </div>`).join('');
+    }
+    lucide.createIcons({ nodes: [el] });
+  } catch { el.innerHTML = `<div class="empty-state" style="padding:var(--space-6) 0"><div class="empty-text" style="color:var(--color-error)">Ошибка загрузки</div></div>`; }
+}
+
+function selectAllSources(val) {
+  document.querySelectorAll('.quiz-source-check').forEach(c => c.checked = val);
+}
+
+// ── QUIZ GENERATE ────────────────────────────────────────────
+async function generateQuiz() {
+  const types = Array.from(activeTypes);
+  if (!types.length) { toast('Выберите хотя бы один тип вопросов', 'error'); return; }
+
+  const selectedSources = Array.from(document.querySelectorAll('.quiz-source-check:checked')).map(c => c.value);
+  const btn = document.getElementById('gen-btn');
+  const results = document.getElementById('quiz-results');
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Генерация...';
+  results.innerHTML = `<div class="card" style="margin-top:var(--space-2)">
+    <div style="display:flex;gap:var(--space-4);align-items:center;padding:var(--space-4) 0">
+      <div class="spinner"></div>
+      <span style="color:var(--color-text-muted);font-size:var(--text-sm)">Модель составляет тест...</span>
+    </div>
+    ${[1,2,3].map(() => `<div class="skeleton" style="height:80px;margin-bottom:var(--space-3);border-radius:var(--radius-lg)"></div>`).join('')}
+  </div>`;
+
+  try {
+    const body = {
+      num_questions: parseInt(document.getElementById('q-count').value),
+      question_types: types,
+      generate_answers: document.getElementById('gen-answers').checked,
+      temperature: parseFloat(document.getElementById('quiz-temp').value),
+      chunks_per_question: parseInt(document.getElementById('quiz-chunks').value),
+      sources: selectedSources.length ? selectedSources : null
+    };
+
+    const r = await fetch(`${API}/quiz/generate`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Ошибка сервера'); }
+    const d = await r.json();
+    const questions = d.questions || d.quiz || [];
+    renderQuizResults(questions, body);
+  } catch(e) {
+    results.innerHTML = `<div class="card" style="margin-top:var(--space-2)">
+      <div style="display:flex;gap:var(--space-3);align-items:center;color:var(--color-error)">
+        <i data-lucide="alert-circle" style="width:20px;height:20px;flex-shrink:0"></i>
+        <span>${e.message}</span>
+      </div>
+    </div>`;
+    lucide.createIcons({ nodes: [results] });
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i data-lucide="sparkles" style="width:18px;height:18px"></i> Сгенерировать тест';
+    lucide.createIcons({ nodes: [btn] });
+  }
+}
+
+function renderQuizResults(questions, params) {
+  const results = document.getElementById('quiz-results');
+  if (!questions.length) {
+    results.innerHTML = `<div class="card" style="margin-top:var(--space-2)"><div class="empty-state"><div class="empty-title">Нет вопросов</div><div class="empty-text">Попробуйте изменить параметры</div></div></div>`;
+    return;
+  }
+
+  const typeCounts = {};
+  questions.forEach(q => { const t = q.type || 'open'; typeCounts[t] = (typeCounts[t]||0)+1; });
+
+  results.innerHTML = `
+    <div style="margin-top:var(--space-4)">
+      <div class="results-header">
+        <div class="results-stat">
+          <div class="results-stat-val">${questions.length}</div>
+          <div class="results-stat-label">Вопросов</div>
+        </div>
+        <div style="width:1px;background:var(--color-divider);align-self:stretch"></div>
+        <div class="results-stat">
+          <div class="results-stat-val">${typeCounts['mcq']||0}</div>
+          <div class="results-stat-label">С выбором</div>
+        </div>
+        <div style="width:1px;background:var(--color-divider);align-self:stretch"></div>
+        <div class="results-stat">
+          <div class="results-stat-val">${typeCounts['truefalse']||0}</div>
+          <div class="results-stat-label">Правда/Ложь</div>
+        </div>
+        <div style="width:1px;background:var(--color-divider);align-self:stretch"></div>
+        <div class="results-stat">
+          <div class="results-stat-val">${typeCounts['open']||0}</div>
+          <div class="results-stat-label">Открытых</div>
+        </div>
+        <div style="margin-left:auto">
+          <button class="btn btn-secondary btn-sm" onclick="exportQuiz()">
+            <i data-lucide="download" style="width:14px;height:14px"></i>
+            Скачать
+          </button>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-3);margin-top:var(--space-4)">
+        ${questions.map((q, i) => renderQuestion(q, i)).join('')}
+      </div>
+    </div>`;
+  lucide.createIcons({ nodes: [results] });
+
+  // Store for export
+  window._quizData = { questions, params };
+}
+
+function renderQuestion(q, i) {
+  const type = q.type || 'open';
+  const typeLabel = { open: 'Открытый', mcq: 'С выбором', truefalse: 'Правда/Ложь' }[type] || type;
+  const typeCls = { open: 'type-open', mcq: 'type-mcq', truefalse: 'type-truefalse' }[type] || 'type-open';
+
+  let body = '';
+  if (type === 'mcq' && q.options) {
+    const correctIdx = typeof q.correct_index === 'number' ? q.correct_index : -1;
+    body = `<div class="mcq-options">${q.options.map((opt, oi) =>
+      `<div class="mcq-option ${oi === correctIdx ? 'correct' : ''}">
+        <span class="mcq-key">${String.fromCharCode(65+oi)}</span>
+        <span>${opt}</span>
+        ${oi === correctIdx ? '<i data-lucide="check-circle" style="width:14px;height:14px;margin-left:auto;flex-shrink:0"></i>' : ''}
+      </div>`).join('')}</div>`;
+  } else if (type === 'truefalse') {
+    const ans = q.answer;
+    body = `<div class="mcq-options">
+      <div class="mcq-option ${ans === true || ans === 'true' ? 'correct' : ''}"><span class="mcq-key">А</span><span>Правда</span></div>
+      <div class="mcq-option ${ans === false || ans === 'false' ? 'correct' : ''}"><span class="mcq-key">Б</span><span>Ложь</span></div>
+    </div>`;
+  } else if (q.answer) {
+    body = `<div class="answer-reveal"><strong>Ответ:</strong> ${q.answer}</div>`;
+  }
+
+  return `<div class="quiz-question">
+    <div class="quiz-q-header">
+      <div class="quiz-q-num">${i+1}</div>
+      <span class="quiz-q-type ${typeCls}">${typeLabel}</span>
+      <span class="quiz-q-text">${q.question || q.text || '—'}</span>
+    </div>
+    ${body}
+    ${q.source ? `<div style="margin-top:var(--space-2);font-size:var(--text-xs);color:var(--color-text-faint)">📎 ${q.source}</div>` : ''}
+  </div>`;
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function exportQuiz() {
+  if (!window._quizData) return;
+  const { questions } = window._quizData;
+  let text = `ТЕСТ — Qwen RAG System\nСгенерировано: ${new Date().toLocaleString('ru')}\n${'='.repeat(50)}\n\n`;
+  questions.forEach((q, i) => {
+    const type = q.type || 'open';
+    text += `${i+1}. [${type.toUpperCase()}] ${q.question || q.text}\n`;
+    if (type === 'mcq' && q.options) {
+      q.options.forEach((opt, oi) => { text += `   ${String.fromCharCode(65+oi)}) ${opt}\n`; });
+      if (typeof q.correct_index === 'number') text += `   Ответ: ${String.fromCharCode(65+q.correct_index)}\n`;
+    } else if (type === 'truefalse') {
+      const ans = q.answer;
+      text += `   Ответ: ${ans === true || ans === 'true' ? 'Правда' : 'Ложь'}\n`;
+    } else if (q.answer) {
+      text += `   Ответ: ${q.answer}\n`;
+    }
+    text += '\n';
+  });
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `quiz_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  toast('Тест скачан', 'success');
+}
+
+// Enter to submit
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) {
+    const active = document.querySelector('.tab-panel.active');
+    if (active?.id === 'tab-ask') askQuestion();
+  }
+});
+</script>
+</body>
+</html>
